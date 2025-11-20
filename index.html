@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Studio - Single File</title>
+    <title>WFN QR Studio</title>
     
+    <!-- Favicon: Uses the school logo for the browser tab -->
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/wfn-nyk/wfn-qr-code-generator/3638b66e6981db373d4d295475a2bb648da83f76/School%20Logo_small.png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -34,7 +37,7 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION ---
-        // UPDATED: Using raw.githubusercontent.com directly avoids redirect/CORS issues
+        // UPDATED: Using the specific GitHub raw URL provided
         const DEFAULT_LOGO_URL = "https://raw.githubusercontent.com/wfn-nyk/wfn-qr-code-generator/3638b66e6981db373d4d295475a2bb648da83f76/School%20Logo_small.png"; 
         // ---------------------
 
@@ -47,7 +50,6 @@
         const MailIcon = (p) => <IconWrapper {...p}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></IconWrapper>;
         const WifiIcon = (p) => <IconWrapper {...p}><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></IconWrapper>;
         const TypeIcon = (p) => <IconWrapper {...p}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></IconWrapper>;
-        const Share2Icon = (p) => <IconWrapper {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></IconWrapper>;
         const PaletteIcon = (p) => <IconWrapper {...p}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></IconWrapper>;
         const ImageIcon = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></IconWrapper>;
         const Trash2Icon = (p) => <IconWrapper {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconWrapper>;
@@ -76,7 +78,7 @@
             const [title, setTitle] = useState("");
             const [fgColor, setFgColor] = useState("#000000");
             const [bgColor, setBgColor] = useState("#ffffff");
-            const [selectedIcon, setSelectedIcon] = useState("none");
+            const [selectedIcon, setSelectedIcon] = useState("default");
             
             const [customLogo, setCustomLogo] = useState(null);
             const [gradientColors, setGradientColors] = useState(["#000000", "#555555", "#aaaaaa"]);
@@ -87,7 +89,11 @@
             // Helper: Extract colors from image
             const extractColors = (imageSrc) => {
                 const img = new Image();
-                img.crossOrigin = "Anonymous"; // Crucial for GitHub images
+                // UPDATED: Only set crossOrigin for http/https URLs, not data URIs
+                if (imageSrc.startsWith('http')) {
+                    img.crossOrigin = "Anonymous";
+                }
+                
                 img.onload = () => {
                     const cvs = document.createElement('canvas');
                     cvs.width = 100;
@@ -244,7 +250,12 @@
 
                         if (imgSource) {
                             const img = new Image();
-                            img.crossOrigin = "Anonymous";
+                            
+                            // UPDATED: Only set crossOrigin for http/https URLs
+                            if (imgSource.startsWith('http')) {
+                                img.crossOrigin = "Anonymous";
+                            }
+
                             await new Promise((resolve) => {
                                 img.onload = () => {
                                     if (!isSvg) {
@@ -303,8 +314,20 @@
             const downloadQR = () => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
+                
+                // UPDATED: Date Formatting for YYMMDD
+                const now = new Date();
+                const yy = now.getFullYear().toString().slice(-2);
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const dateStr = `${yy}${mm}${dd}`;
+                
+                // UPDATED: Filename Construction (WFN-QR_title_YYMMDD.png)
+                const cleanTitle = title ? title.trim() : 'untitled';
+                const filename = `WFN-QR_${cleanTitle}_${dateStr}.png`;
+
                 const link = document.createElement('a');
-                link.download = `qrcode-${title || 'download'}.png`;
+                link.download = filename;
                 link.href = canvas.toDataURL("image/png");
                 link.click();
                 
@@ -329,11 +352,10 @@
                     {/* Header */}
                     <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
                         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="bg-indigo-600 p-2 rounded-lg text-white">
-                                    <Share2Icon size={20} />
-                                </div>
-                                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">QR Studio</h1>
+                            <div className="flex items-center gap-3">
+                                {/* UPDATED: School Badge Logo */}
+                                <img src={DEFAULT_LOGO_URL} alt="WFN Logo" className="w-10 h-10 object-contain rounded-md shadow-sm" />
+                                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">WFN QR Studio</h1>
                             </div>
                         </div>
                     </header>
