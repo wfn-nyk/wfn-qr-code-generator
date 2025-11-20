@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WFN QR Studio</title>
     
-    <!-- Favicon: Uses the school logo for the browser tab -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/wfn-nyk/wfn-qr-code-generator/3638b66e6981db373d4d295475a2bb648da83f76/School%20Logo_small.png">
 
     <!-- Tailwind CSS -->
@@ -21,12 +21,16 @@
     <!-- QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Loading only the web fonts we need. System fonts (Arial, Times) don't need loading. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@300;400;700;900&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* Main App Font - Merriweather */
+        body { font-family: 'Merriweather', serif; }
         canvas { image-rendering: pixelated; }
+        input, select, button { font-family: 'Merriweather', serif; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -37,11 +41,10 @@
         const { useState, useEffect, useRef } = React;
 
         // --- CONFIGURATION ---
-        // UPDATED: Using the specific GitHub raw URL provided
         const DEFAULT_LOGO_URL = "https://raw.githubusercontent.com/wfn-nyk/wfn-qr-code-generator/3638b66e6981db373d4d295475a2bb648da83f76/School%20Logo_small.png"; 
         // ---------------------
 
-        // --- ICONS (Inline SVGs to avoid dependency issues) ---
+        // --- ICONS ---
         const IconWrapper = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -74,12 +77,18 @@
             const canvasRef = useRef(null);
             const fileInputRef = useRef(null);
             
-            const [text, setText] = useState("https://example.com");
+            const [text, setText] = useState("");
             const [title, setTitle] = useState("");
             const [fgColor, setFgColor] = useState("#000000");
             const [bgColor, setBgColor] = useState("#ffffff");
             const [selectedIcon, setSelectedIcon] = useState("default");
             
+            const [titleColor, setTitleColor] = useState("#000000");
+            const [matchTitleColor, setMatchTitleColor] = useState(false);
+            
+            const [titleFont, setTitleFont] = useState("Merriweather");
+            const [titleFontSize, setTitleFontSize] = useState(60);
+
             const [customLogo, setCustomLogo] = useState(null);
             const [gradientColors, setGradientColors] = useState(["#000000", "#555555", "#aaaaaa"]);
             const [useLogoColors, setUseLogoColors] = useState(true);
@@ -89,7 +98,6 @@
             // Helper: Extract colors from image
             const extractColors = (imageSrc) => {
                 const img = new Image();
-                // UPDATED: Only set crossOrigin for http/https URLs, not data URIs
                 if (imageSrc.startsWith('http')) {
                     img.crossOrigin = "Anonymous";
                 }
@@ -167,8 +175,9 @@
                 const ctx = canvas.getContext('2d');
                 const qrSize = 1000;
                 const padding = 80;
-                const titleHeight = title ? 120 : 0;
-                const totalHeight = qrSize + (title ? titleHeight + 40 : 0);
+                
+                const titleHeight = title ? (titleFontSize * 2.5) : 0;
+                const totalHeight = qrSize + titleHeight;
                 
                 canvas.width = qrSize;
                 canvas.height = totalHeight;
@@ -179,8 +188,10 @@
                     ctx.fillRect(0, 0, qrSize, totalHeight);
 
                     // 2. QR Base
+                    const qrContent = text || "https://example.com";
+
                     const tempCanvas = document.createElement('canvas');
-                    await window.QRCode.toCanvas(tempCanvas, text, {
+                    await window.QRCode.toCanvas(tempCanvas, qrContent, {
                         width: qrSize - (padding * 2),
                         margin: 0,
                         color: { dark: '#000000', light: '#00000000' },
@@ -192,14 +203,12 @@
 
                     if (useLogoColors && selectedIcon !== 'none') {
                         if (selectedIcon === 'default') {
-                            // Default Logo Gradient (Blue-Yellow-Red)
                             const gradient = ctx.createLinearGradient(padding, padding, qrSize - padding, qrSize - padding);
                             gradient.addColorStop(0, "#2563eb");
                             gradient.addColorStop(0.5, "#facc15");
                             gradient.addColorStop(1, "#dc2626");
                             currentFgColor = gradient;
                         } else if (selectedIcon === 'custom' && gradientColors.length > 0) {
-                            // Custom Gradient
                             const gradient = ctx.createLinearGradient(padding, padding, qrSize - padding, qrSize - padding);
                             gradientColors.forEach((color, index) => {
                                 const stop = index / (gradientColors.length > 1 ? gradientColors.length - 1 : 1);
@@ -251,7 +260,6 @@
                         if (imgSource) {
                             const img = new Image();
                             
-                            // UPDATED: Only set crossOrigin for http/https URLs
                             if (imgSource.startsWith('http')) {
                                 img.crossOrigin = "Anonymous";
                             }
@@ -279,7 +287,7 @@
                                 };
                                 img.onerror = () => {
                                     console.error("Could not load image", imgSource);
-                                    resolve(); // Fail gracefully
+                                    resolve(); 
                                 };
                                 img.src = imgSource;
                             });
@@ -288,16 +296,36 @@
 
                     // 6. Draw Title
                     if (title) {
-                        let titleColor = fgColor;
-                        if (useLogoColors) {
-                            if (selectedIcon === 'default') titleColor = '#2563eb';
-                            if (selectedIcon === 'custom' && gradientColors.length > 0) titleColor = gradientColors[0];
+                        let finalTitleColor = titleColor;
+                        
+                        if (matchTitleColor) {
+                             if (selectedIcon === 'default') {
+                                 finalTitleColor = '#2563eb'; 
+                             } else if (selectedIcon === 'custom' && gradientColors.length > 0) {
+                                 finalTitleColor = gradientColors[0]; 
+                             } else if (ICONS[selectedIcon]) {
+                                 finalTitleColor = ICONS[selectedIcon].color;
+                             }
                         }
-                        ctx.fillStyle = titleColor;
-                        ctx.font = `bold 60px 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`;
+
+                        ctx.fillStyle = finalTitleColor;
+                        
+                        // UPDATED: Font Weight Logic
+                        // Heavier weights for Display fonts (Oswald, Montserrat) to stand out
+                        let fontWeight = 'bold';
+                        if (titleFont === 'Merriweather' || titleFont === 'Lora' || titleFont === 'Playfair Display') fontWeight = '700';
+                        if (titleFont === 'Oswald') fontWeight = '700';
+                        if (titleFont === 'Open Sans') fontWeight = '700';
+                        if (titleFont === 'Dancing Script') fontWeight = '700';
+                        if (titleFont === 'Montserrat') fontWeight = '700';
+
+                        // 'Times New Roman', 'Arial', 'Courier New' handled by system
+                        ctx.font = `${fontWeight} ${titleFontSize}px '${titleFont}', sans-serif`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(title, qrSize / 2, qrSize + (titleHeight / 2));
+                        
+                        const textY = qrSize + (titleHeight / 2);
+                        ctx.fillText(title, qrSize / 2, textY);
                     }
 
                 } catch (err) {
@@ -309,20 +337,18 @@
             useEffect(() => {
                 const timer = setTimeout(() => generateQR(), 300);
                 return () => clearTimeout(timer);
-            }, [text, title, fgColor, bgColor, selectedIcon, customLogo, useLogoColors, gradientColors]);
+            }, [text, title, fgColor, bgColor, titleColor, matchTitleColor, titleFont, titleFontSize, selectedIcon, customLogo, useLogoColors, gradientColors]);
 
             const downloadQR = () => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 
-                // UPDATED: Date Formatting for YYMMDD
                 const now = new Date();
                 const yy = now.getFullYear().toString().slice(-2);
                 const mm = String(now.getMonth() + 1).padStart(2, '0');
                 const dd = String(now.getDate()).padStart(2, '0');
                 const dateStr = `${yy}${mm}${dd}`;
                 
-                // UPDATED: Filename Construction (WFN-QR_title_YYMMDD.png)
                 const cleanTitle = title ? title.trim() : 'untitled';
                 const filename = `WFN-QR_${cleanTitle}_${dateStr}.png`;
 
@@ -331,7 +357,7 @@
                 link.href = canvas.toDataURL("image/png");
                 link.click();
                 
-                const newItem = { text, title, fgColor, bgColor, selectedIcon, useLogoColors, gradientColors, date: new Date().toLocaleTimeString() };
+                const newItem = { text, title, fgColor, bgColor, titleColor, matchTitleColor, titleFont, titleFontSize, selectedIcon, useLogoColors, gradientColors, date: new Date().toLocaleTimeString() };
                 if (history.length === 0 || JSON.stringify(history[0]) !== JSON.stringify(newItem)) {
                     setHistory([newItem, ...history].slice(0, 5));
                 }
@@ -342,6 +368,11 @@
                 setTitle(item.title);
                 setFgColor(item.fgColor);
                 setBgColor(item.bgColor);
+                setTitleColor(item.titleColor || "#000000");
+                setMatchTitleColor(item.matchTitleColor || false);
+                setTitleFont(item.titleFont || "Merriweather");
+                setTitleFontSize(item.titleFontSize || 60);
+                
                 setSelectedIcon(item.selectedIcon);
                 setUseLogoColors(item.useLogoColors || false); 
                 setGradientColors(item.gradientColors || ["#000000", "#555555", "#aaaaaa"]);
@@ -353,7 +384,6 @@
                     <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
                         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                {/* UPDATED: School Badge Logo */}
                                 <img src={DEFAULT_LOGO_URL} alt="WFN Logo" className="w-10 h-10 object-contain rounded-md shadow-sm" />
                                 <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">WFN QR Studio</h1>
                             </div>
@@ -372,11 +402,49 @@
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Target URL</label>
-                                            <input type="text" value={text} onChange={(e) => setText(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all" />
+                                            <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Enter URL or text here" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all placeholder:text-slate-300" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
                                             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all" />
+                                        </div>
+                                        
+                                        {/* Font Controls */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Font</label>
+                                                {/* UPDATED: 10 Font Options */}
+                                                <select value={titleFont} onChange={(e) => setTitleFont(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all text-sm cursor-pointer">
+                                                    <optgroup label="Serif">
+                                                        <option value="Merriweather">Merriweather (Default)</option>
+                                                        <option value="Times New Roman">Times New Roman</option>
+                                                        <option value="Lora">Lora (Calligraphic)</option>
+                                                        <option value="Playfair Display">Playfair (Elegant)</option>
+                                                    </optgroup>
+                                                    <optgroup label="Sans-Serif">
+                                                        <option value="Arial">Arial</option>
+                                                        <option value="Open Sans">Open Sans</option>
+                                                        <option value="Montserrat">Montserrat (Bold)</option>
+                                                        <option value="Oswald">Oswald (Tall)</option>
+                                                    </optgroup>
+                                                    <optgroup label="Other">
+                                                        <option value="Courier New">Courier New (Mono)</option>
+                                                        <option value="Dancing Script">Dancing Script (Cursive)</option>
+                                                    </optgroup>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Size: {titleFontSize}px</label>
+                                                <input 
+                                                    type="range" 
+                                                    min="30" 
+                                                    max="120" 
+                                                    step="5"
+                                                    value={titleFontSize} 
+                                                    onChange={(e) => setTitleFontSize(Number(e.target.value))} 
+                                                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -386,7 +454,7 @@
                                         <PaletteIcon size={18} className="text-pink-500" />
                                         <h2>Appearance</h2>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div className={useLogoColors ? "opacity-50 pointer-events-none" : ""}>
                                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Foreground</label>
                                             <div className="flex items-center gap-2">
@@ -400,6 +468,23 @@
                                                 <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-10 w-10 rounded-lg cursor-pointer border-0 p-0 overflow-hidden" />
                                                 <span className="text-sm font-mono text-slate-500">{bgColor}</span>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Title Color Section */}
+                                    <div className="mb-6 pt-4 border-t border-slate-100">
+                                        <div className={matchTitleColor ? "opacity-50 pointer-events-none" : ""}>
+                                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title Color</label>
+                                            <div className="flex items-center gap-2">
+                                                <input type="color" value={titleColor} onChange={(e) => setTitleColor(e.target.value)} className="h-10 w-10 rounded-lg cursor-pointer border-0 p-0 overflow-hidden" />
+                                                <span className="text-sm font-mono text-slate-500">{titleColor}</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2">
+                                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-indigo-600">
+                                                <input type="checkbox" checked={matchTitleColor} onChange={(e) => setMatchTitleColor(e.target.checked)} className="accent-indigo-600 w-4 h-4" />
+                                                Sync with Logo Color
+                                            </label>
                                         </div>
                                     </div>
 
