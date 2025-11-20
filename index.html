@@ -27,10 +27,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@300;400;700;900&family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Main App Font - Merriweather */
-        body { font-family: 'Merriweather', serif; }
+        /* Main App Font - Vollkorn */
+        body { font-family: 'Vollkorn', serif; }
         canvas { image-rendering: pixelated; }
-        input, select, button { font-family: 'Merriweather', serif; }
+        input, select, button { font-family: 'Vollkorn', serif; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -86,7 +86,7 @@
             const [titleColor, setTitleColor] = useState("#000000");
             const [matchTitleColor, setMatchTitleColor] = useState(false);
             
-            const [titleFont, setTitleFont] = useState("Merriweather");
+            const [titleFont, setTitleFont] = useState("Vollkorn");
             const [titleFontSize, setTitleFontSize] = useState(60);
 
             const [customLogo, setCustomLogo] = useState(null);
@@ -313,7 +313,7 @@
                         // UPDATED: Font Weight Logic
                         // Heavier weights for Display fonts (Oswald, Montserrat) to stand out
                         let fontWeight = 'bold';
-                        if (titleFont === 'Merriweather' || titleFont === 'Lora' || titleFont === 'Playfair Display') fontWeight = '700';
+                        if (titleFont === 'Times New Roman' || titleFont === 'Lora' || titleFont === 'Playfair Display') fontWeight = '700';
                         if (titleFont === 'Oswald') fontWeight = '700';
                         if (titleFont === 'Open Sans') fontWeight = '700';
                         if (titleFont === 'Dancing Script') fontWeight = '700';
@@ -370,7 +370,7 @@
                 setBgColor(item.bgColor);
                 setTitleColor(item.titleColor || "#000000");
                 setMatchTitleColor(item.matchTitleColor || false);
-                setTitleFont(item.titleFont || "Merriweather");
+                setTitleFont(item.titleFont || "Times New Roman");
                 setTitleFontSize(item.titleFontSize || 60);
                 
                 setSelectedIcon(item.selectedIcon);
@@ -416,8 +416,8 @@
                                                 {/* UPDATED: 10 Font Options */}
                                                 <select value={titleFont} onChange={(e) => setTitleFont(e.target.value)} className="w-full px-3 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 outline-none transition-all text-sm cursor-pointer">
                                                     <optgroup label="Serif">
-                                                        <option value="Merriweather">Merriweather (Default)</option>
-                                                        <option value="Times New Roman">Times New Roman</option>
+                                                        <option value="Times New Roman">Times New Roman (Default)</option>
+                                                        <option value="Merriweather">Merriweather </option>
                                                         <option value="Lora">Lora (Calligraphic)</option>
                                                         <option value="Playfair Display">Playfair (Elegant)</option>
                                                     </optgroup>
